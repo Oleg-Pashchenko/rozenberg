@@ -30,7 +30,7 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 
 my_id = 1398715343
 rozenberg_id = 996051043
-admin_ids = [my_id, rozenberg_id]
+admin_ids = [my_id, rozenberg_id, 791143287]
 
 
 @dp.callback_query_handler(lambda m: "delete" in m.data)
@@ -44,6 +44,8 @@ async def delete(data):
     f.close()
     await bot.send_message(data.message.chat.id, "Удалено!")
     await cmd_admin(data.message)
+
+
 @dp.callback_query_handler(lambda callback_query: "edit_link" in callback_query.data, state="*")
 async def edit_link(callback_query, state):
     index = int(callback_query.data.replace("edit_link_", ""))
@@ -52,6 +54,8 @@ async def edit_link(callback_query, state):
         data["index"] = index
     await EditLink.text.set()
     await bot.send_message(callback_query.from_user.id, "Введите новый текст:")
+
+
 @dp.message_handler(lambda m: True, state=EditLink.text)
 async def edit_link_2(message, state: FSMContext):
     async with state.proxy() as data:
@@ -65,6 +69,8 @@ async def edit_link_2(message, state: FSMContext):
     await bot.send_message(message.chat.id, f"Изменено!")
     await state.finish()
     await cmd_admin(message)
+
+
 @dp.callback_query_handler(
     lambda callback_query: "edit_text" in callback_query.data, state="*"
 )
@@ -91,6 +97,7 @@ async def edit_text_2(message, state: FSMContext):
     await bot.send_message(message.chat.id, f"Изменено!")
     await state.finish()
     await cmd_admin(message)
+
 
 @dp.callback_query_handler(
     lambda callback_query: "edit_time" in callback_query.data, state="*"
@@ -119,6 +126,7 @@ async def edit_time_2(message, state: FSMContext):
     await bot.send_message(message.chat.id, f"Изменено!")
     await state.finish()
     await cmd_admin(message)
+
 
 @dp.message_handler(lambda m: m.text == "Добавить новый контент", state="*")
 async def add_new_content(message, state: FSMContext):
@@ -149,8 +157,6 @@ async def add_new_content_3(message, state: FSMContext):
     await bot.send_message(message.chat.id, f"Добавлено!")
     await state.finish()
     await cmd_admin(message)
-
-
 
 
 def register_if_user_is_new(chat_id):
@@ -208,19 +214,45 @@ async def cmd_admin(message):
 
 def send_video(chat_id, text, video_link):
     url_req = (
-        "https://api.telegram.org/bot"
-        + API_TOKEN
-        + "/sendMessage"
-        + "?chat_id="
-        + chat_id
-        + "&text="
-        + f"{text}\n{video_link}"
+            "https://api.telegram.org/bot"
+            + API_TOKEN
+            + "/sendMessage"
+            + "?chat_id="
+            + chat_id
+            + "&text="
+            + f"{text}\n{video_link}"
     )
     results = requests.get(url_req)
 
 
+async def add_referal_link(arg):
+    referals = json.load(open('referals.json', 'r', encoding='UTF-8'))
+    if arg in referals.keys():
+        referals[arg] += 1
+    else:
+        referals[arg] = 1
+    with open('referals.json', 'w', encoding='UTF-8') as f:
+        f.write(json.dumps(referals))
+    f.close()
+
+async def get_referal_stats():
+    referals = json.load(open('referals.json', 'r', encoding='UTF-8'))
+    ans = ''
+    for key in referals.keys():
+        ans += f'{key}: {referals[key]}\n'
+    return ans
+@dp.message_handler(commands='stats')
+async def stats(message):
+    stats = await get_referal_stats()
+    await message.answer(f"Статистика по реферальным ссылкам:\n{stats}")
+
+
 @dp.message_handler(commands="start")
 async def cmd_start(message):
+    referral_link = message.get_args()
+    if referral_link:
+        await add_referal_link(referral_link)
+
     greet_kb = ReplyKeyboardMarkup(resize_keyboard=True)
     greet_kb.add("Начать")
     await bot.send_message(
@@ -262,14 +294,15 @@ def update():
             for index in db.keys():
                 day, hour, minute, v = map(int, db[index].split(":"))
                 if (
-                    current_day == day
-                    and current_hour >= hour
-                    and current_minute >= minute
+                        current_day == day
+                        and current_hour >= hour
+                        and current_minute >= minute
                 ):
                     dt = datetime.now().date()
                     next_day = dt + timedelta(days=1)
-                    content = json.load(open("content.json", "r", encoding="UTF-8"))[v]
-                    send_video(index, content["message"], content["link"])
+                    content = json.load(open("content.json", "r", encoding="UTF-8"))
+                    send_video(index, content[v]["message"], content[v]["link"])
+                    print(content)
                     if 'time' in content[v + 1].keys():
                         hour, minute = map(int, content[v + 1].split(':'))
                     db[index] = f"{next_day.day}:{hour}:{minute}:{v + 1}"
