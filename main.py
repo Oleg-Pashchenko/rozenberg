@@ -301,11 +301,14 @@ def update():
                     dt = datetime.now().date()
                     next_day = dt + timedelta(days=1)
                     content = json.load(open("content.json", "r", encoding="UTF-8"))
-                    send_video(index, content[v]["message"], content[v]["link"])
-                    print(content)
-                    if 'time' in content[v + 1].keys():
-                        hour, minute = map(int, content[v + 1].split(':'))
-                    db[index] = f"{next_day.day}:{hour}:{minute}:{v + 1}"
+                    if v not in content.keys():
+                        db[index] = f"{next_day.day}:{hour}:{minute}:{v}"
+                    else:
+                        send_video(index, content[v]["message"], content[v]["link"])
+                        print(content)
+                        if 'time' in content[v + 1].keys():
+                            hour, minute = map(int, content[v + 1].split(':'))
+                        db[index] = f"{next_day.day}:{hour}:{minute}:{v + 1}"
             with open("db.json", "w", encoding="UTF-8") as f:
                 f.write(json.dumps(db))
                 f.close()
