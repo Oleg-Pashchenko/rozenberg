@@ -252,9 +252,6 @@ async def cmd_start(message):
     referral_link = message.get_args()
     if referral_link:
         await add_referal_link(referral_link)
-
-    greet_kb = ReplyKeyboardMarkup(resize_keyboard=True)
-    greet_kb.add("Начать")
     await bot.send_message(
         message.chat.id,
         text="""Доброго дня!\n\nВы тут, а значит не исключено, что в  ближайшее время вы планируете ремонт или приобретение квартиры (дома). Отлично!
@@ -271,11 +268,11 @@ async def cmd_start(message):
 \n\nИтак, каждый день в течение недели вы будете получать наши видеоуроки. Всего 6 уроков продолжительностью не более 5 минут каждый. Поверьте, эти 5 минут в день могут перевернуть ваше представление о дизайне и/или спасти от роковой ошибки.
 \n\nНажимайте на кнопку ниже, чтобы получить первый урок.\n\nС уважением, Михаил Новинский и студия MNdesign.
 """,
-        reply_markup=greet_kb,
     )
+    await cmd_go(message)
 
 
-@dp.message_handler(lambda m: m.text == "Начать")
+
 async def cmd_go(message):
     status = register_if_user_is_new(message.chat.id)
     if status is False:
