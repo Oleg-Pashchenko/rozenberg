@@ -298,7 +298,7 @@ def update():
                     dt = datetime.now().date()
                     next_day = dt + timedelta(days=1)
                     content = json.load(open("content.json", "r", encoding="UTF-8"))
-                    if v not in content.keys():
+                    if len(content) == v:
                         db[index] = f"{next_day.day}:{hour}:{minute}:{v}"
                     else:
                         send_video(index, content[v]["message"], content[v]["link"])
